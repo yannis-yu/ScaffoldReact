@@ -1,0 +1,70 @@
+name: Build and Deploy Web
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Expo CLI
+        run: npm install -g @expo/cli
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate app.config.js
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            BASE_URL="''"
+          else
+            BASE_URL="'/${{ github.ref_name }}'"
+          fi
+
+          cat <<EOF > app.config.js
+          module.exports = ({ config }) => {
+            return {
+              ...config,
+              experiments: {
+                ...(config.experiments || {}),
+                baseUrl: $BASE_URL,
+              },
+            };
+          };
+          EOF
+
+      - name: Build web application
+        run: |
+          npx expo export -p web
+
+      - name: Generate CNAME
+        if: github.ref_name == 'main'
+        env:
+          CNAME_CONTENT: ${{ secrets.BYTELAND_CNAME }}
+        run: |
+          if [ -n "$CNAME_CONTENT" ]; then
+            echo "$CNAME_CONTENT" > dist/CNAME
+          fi
+
+      - name: Deploy to external repository
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          external_repository: ${{ secrets.BYTELAND_EXTERNAL_REPO_NAME }}
+          publish_branch: pages
+          publish_dir: ./dist
+          destination_dir: ${{ github.ref_name == 'main' && '.' || github.ref_name }}
+          deploy_key: ${{ secrets.BYTELAND_EXTERNAL_DEPLOY_KEY }}
+          commit_message: ${{ github.event.head_commit.message }}
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com

@@ -1,0 +1,88 @@
+name: Build and Release iOS
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Expo CLI
+        run: npm install -g @expo/cli
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Prebuild iOS project
+        run: npx expo prebuild --platform ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios && pod install
+
+      - name: Build iOS App (Unsigned)
+        run: |
+          cd ios
+          xcodebuild -workspace Scaffold.xcworkspace \
+            -scheme Scaffold \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            PROVISIONING_PROFILE="" \
+            build
+
+      - name: Create Unsigned IPA
+        run: |
+          cd ios
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/Scaffold.app Payload/
+          zip -r unsigned.ipa Payload/
+          rm -rf Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ipa
+          path: ios/unsigned.ipa
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build-ios
+    permissions:
+      contents: write
+    steps:
+      - name: Download IPA
+        uses: actions/download-artifact@v4
+        with:
+          name: release-ipa
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}-${{ github.run_number }}-ios
+          name: "iOS ${{ github.ref_name }}-${{ github.run_number }}"
+          body: |
+            ## iOS IPA ${{ github.ref_name }}-${{ github.run_number }}
+
+            ${{ github.event.head_commit.message }}
+          files: release.ipa
+          draft: false
+          prerelease: false

@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native';
 import Track from './Track';
 
-const Timeline = () => {
+interface TimelineProps {
+  waveformData: number[];
+}
+
+const Timeline: React.FC<TimelineProps> = ({ waveformData }) => {
   return (
     <ScrollView style={styles.timeline}>
-      <Track />
+      <Track waveformData={waveformData} />
     </ScrollView>
   );
 };

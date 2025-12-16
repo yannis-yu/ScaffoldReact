@@ -8,11 +8,15 @@ interface ControlsProps {
   onPlay: () => void;
   onPause: () => void;
   onRecord: () => void;
+  onLoadFile: () => void;
 }
 
-const Controls: React.FC<ControlsProps> = ({ isPlaying, isPaused, isRecording, onPlay, onPause, onRecord }) => {
+const Controls: React.FC<ControlsProps> = ({ isPlaying, isPaused, isRecording, onPlay, onPause, onRecord, onLoadFile }) => {
   return (
     <View style={styles.controls}>
+      <TouchableOpacity style={styles.button} onPress={onLoadFile}>
+        <Text style={styles.buttonText}>Load File</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={[styles.button, isPlaying && styles.activeButton]} onPress={onPlay}>
         <Text style={styles.buttonText}>Play</Text>
       </TouchableOpacity>

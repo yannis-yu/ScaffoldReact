@@ -13,108 +13,21 @@ export default function App() {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [selection, setSelection] = useState<{ start: number | null; end: number | null }>({ start: null, end: null });
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission not granted', 'Sorry, we need microphone permissions to make this work!');
-      }
-    })();
-  }, []);
 
   const handlePlay = async () => {
-    if (sound) {
-      try {
-        await sound.playAsync();
-        setIsPlaying(true);
-        setIsPaused(false);
-        setIsRecording(false);
-      } catch (error) {
-        Alert.alert('Error', 'Could not play audio.');
-      }
-    }
+    // Simplified for debugging
   };
 
   const handlePause = async () => {
-    if (sound) {
-      try {
-        await sound.pauseAsync();
-        setIsPaused(true);
-        setIsPlaying(false);
-      } catch (error) {
-        Alert.alert('Error', 'Could not pause audio.');
-      }
-    }
+    // Simplified for debugging
   };
-
-  async function startRecording() {
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(recording);
-      setIsRecording(true);
-    } catch (err) {
-      console.error('Failed to start recording', err);
-    }
-  }
-
-  async function stopRecording() {
-    if (!recording) {
-      return;
-    }
-    setIsRecording(false);
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    if (uri) {
-      if (sound) {
-        await sound.unloadAsync();
-      }
-      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-      setSound(newSound);
-      generateRandomWaveform();
-    }
-  }
 
   const handleRecord = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
-  const generateRandomWaveform = () => {
-    // Simulate waveform data for now.
-    const data = Array.from({ length: 100 }, () => Math.random());
-    setWaveformData(data);
+    // Simplified for debugging
   };
 
   const handleLoadFile = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'audio/*',
-      });
-
-      if (result.assets && result.assets.length > 0) {
-        const uri = result.assets[0].uri;
-        if (sound) {
-          await sound.unloadAsync();
-        }
-        const { sound: newSound } = await Audio.Sound.createAsync({ uri });
-        setSound(newSound);
-        generateRandomWaveform();
-        Alert.alert('Success', 'Audio file loaded successfully.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Could not load audio file.');
-    }
+    // Simplified for debugging
   };
 
   const handleSelectionChange = (newSelection: { start: number | null; end: number | null }) => {
@@ -122,22 +35,8 @@ export default function App() {
   };
 
   const handleTrim = () => {
-    if (selection.start !== null && selection.end !== null) {
-      const start = Math.min(selection.start, selection.end);
-      const end = Math.max(selection.start, selection.end);
-      const newWaveformData = waveformData.slice(start, end);
-      setWaveformData(newWaveformData);
-      setSelection({ start: null, end: null });
-    }
+    // Simplified for debugging
   };
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -36,9 +36,11 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "^15.12.1",
     "react-native-web": "^0.21.0",
+    "readable-stream": "^4.7.0",
     "stream-browserify": "^3.0.0",
     "telegram": "^2.26.22",
     "util": "^0.12.5",
+    "videostream": "^3.2.2",
     "vm-browserify": "^1.1.2"
   },
   "devDependencies": {

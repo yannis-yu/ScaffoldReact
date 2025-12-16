@@ -4,7 +4,7 @@ import { useAppContext } from '../App';
 import { Api } from 'telegram';
 
 export default function ChatListScreen({ navigation }) {
-  const { client, logout } = useAppContext();
+  const { client } = useAppContext();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +16,7 @@ export default function ChatListScreen({ navigation }) {
     try {
       // Get dialogs (chats)
       const dialogs = await client.getDialogs({
-          limit: 100 // reasonable limit
+          limit: 100
       });
       // Filter for groups and channels
       const filtered = dialogs.filter(d => d.isChannel || d.isGroup);
@@ -50,19 +50,9 @@ export default function ChatListScreen({ navigation }) {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
           ListEmptyComponent={<Text style={styles.empty}>No joined channels or groups found.</Text>}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
-      <View style={styles.footer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Library')} style={styles.linkButton}>
-              <Text style={{color: 'blue'}}>Go to Library</Text>
-          </TouchableOpacity>
-           <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.linkButton}>
-              <Text style={{color: 'blue'}}>Settings</Text>
-          </TouchableOpacity>
-           <TouchableOpacity onPress={logout} style={styles.linkButton}>
-              <Text style={{color: 'red'}}>Logout</Text>
-          </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -89,15 +79,5 @@ const styles = StyleSheet.create({
     padding: 20,
     textAlign: 'center',
     color: 'gray',
-  },
-  footer: {
-      padding: 10,
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      borderTopWidth: 1,
-      borderTopColor: '#ccc'
-  },
-  linkButton: {
-      padding: 10
   }
 });

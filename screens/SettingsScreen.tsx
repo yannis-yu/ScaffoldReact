@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAppContext } from '../App';
 
 export default function SettingsScreen() {
-  const { tmdbApiKey, saveSettings, apiId, apiHash } = useAppContext();
+  const { tmdbApiKey, saveSettings, apiId, apiHash, logout } = useAppContext();
   const [key, setKey] = useState(tmdbApiKey || '');
 
   const handleSave = () => {
@@ -29,6 +29,10 @@ export default function SettingsScreen() {
           <Text>Current API ID: {apiId}</Text>
           <Text>Current API Hash: {apiHash ? '********' : 'Not Set'}</Text>
       </View>
+
+      <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+          <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -58,6 +62,20 @@ const styles = StyleSheet.create({
   info: {
       marginTop: 30,
       padding: 10,
-      backgroundColor: '#f9f9f9'
+      backgroundColor: '#f9f9f9',
+      marginBottom: 30
+  },
+  logoutBtn: {
+      backgroundColor: '#ffeeee',
+      padding: 15,
+      alignItems: 'center',
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: 'red'
+  },
+  logoutText: {
+      color: 'red',
+      fontWeight: 'bold',
+      fontSize: 16
   }
 });

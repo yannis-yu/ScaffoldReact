@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Button, Modal, TextInput, Image, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Button, Modal, TextInput, Image, Alert, ScrollView } from 'react-native';
 import { useAppContext } from '../App';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { extractMetadata } from '../utils/metadata';
 
 export default function VideoListScreen({ route, navigation }) {
   const { chatId, title } = route.params;
@@ -17,6 +18,11 @@ export default function VideoListScreen({ route, navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+
+  // TV Show S/E Selection
+  const [selectedTmdbItem, setSelectedTmdbItem] = useState(null); // The TV show selected
+  const [inputSeason, setInputSeason] = useState('');
+  const [inputEpisode, setInputEpisode] = useState('');
 
   // Missing API Key State
   const [inputApiKey, setInputApiKey] = useState('');
@@ -82,7 +88,6 @@ export default function VideoListScreen({ route, navigation }) {
       if (!inputApiKey) return;
       await saveSettings(null, null, inputApiKey);
       setShowApiKeyInput(false);
-      // Retry search if query exists
       if (searchQuery) {
           searchTMDB(searchQuery, inputApiKey);
       }
@@ -112,17 +117,24 @@ export default function VideoListScreen({ route, navigation }) {
   const onVideoPress = (msg) => {
       const filename = getFilename(msg);
       const text = msg.message || '';
-      let query = filename.replace(/\.[^/.]+$/, "");
+
+      const { title: cleanTitle, season, episode } = extractMetadata(filename, text);
+
+      let query = cleanTitle;
       if (!query || query === 'Unknown Filename') {
           query = text;
       }
 
       setSearchQuery(query);
       setSelectedMessage(msg);
+      // Pre-fill S/E just in case user picks a TV show later
+      setInputSeason(season || '');
+      setInputEpisode(episode || '');
+
       setSearchResults([]);
+      setSelectedTmdbItem(null); // Reset selection
       setModalVisible(true);
 
-      // If no API key, this will trigger the input view inside the modal (via state update in searchTMDB)
       if (query && query.length > 2) {
            searchTMDB(query);
       } else if (!tmdbApiKey) {
@@ -130,13 +142,32 @@ export default function VideoListScreen({ route, navigation }) {
       }
   };
 
-  const addToLibrary = async (tmdbItem) => {
+  const handleTmdbSelect = (item) => {
+      if (item.media_type === 'tv' || item.name) { // TV show
+          setSelectedTmdbItem(item);
+          // Don't add yet, let user confirm S/E
+      } else {
+          // Movie, add directly
+          addToLibrary(item);
+      }
+  };
+
+  const confirmTvShowAdd = () => {
+      if (selectedTmdbItem) {
+          addToLibrary(selectedTmdbItem, inputSeason, inputEpisode);
+      }
+  };
+
+  const addToLibrary = async (tmdbItem, season = null, episode = null) => {
       if (!selectedMessage) return;
 
       const newItem = {
           id: selectedMessage.id.toString() + '_' + chatId.toString(),
           tmdbId: tmdbItem.id,
           title: tmdbItem.title || tmdbItem.name,
+          mediaType: tmdbItem.media_type || (tmdbItem.name ? 'tv' : 'movie'),
+          season: season,
+          episode: episode,
           overview: tmdbItem.overview,
           posterPath: tmdbItem.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbItem.poster_path}` : null,
           videoFilename: getFilename(selectedMessage),
@@ -149,14 +180,19 @@ export default function VideoListScreen({ route, navigation }) {
           const existing = await AsyncStorage.getItem('library');
           let library = existing ? JSON.parse(existing) : [];
 
+          // Remove potential duplicate if re-adding logic
+          // library = library.filter(i => i.id !== newItem.id);
+
           if (library.find(i => i.id === newItem.id)) {
-              Alert.alert('Info', 'Video already in library');
+              Alert.alert('Info', 'Video updated in library');
+              library = library.map(i => i.id === newItem.id ? newItem : i);
           } else {
               library.push(newItem);
-              await AsyncStorage.setItem('library', JSON.stringify(library));
               Alert.alert('Success', 'Added to library!');
           }
+          await AsyncStorage.setItem('library', JSON.stringify(library));
           setModalVisible(false);
+          setSelectedTmdbItem(null);
       } catch (e) {
           console.error('Error saving to library', e);
           Alert.alert('Error', 'Failed to save to library');
@@ -178,23 +214,23 @@ export default function VideoListScreen({ route, navigation }) {
   const renderSearchResult = ({ item }) => {
       const title = item.title || item.name;
       const year = (item.release_date || item.first_air_date || '').split('-')[0];
+      const isTv = item.media_type === 'tv' || !!item.name;
       const uri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
 
       return (
-          <TouchableOpacity style={styles.searchItem} onPress={() => addToLibrary(item)}>
+          <TouchableOpacity style={styles.searchItem} onPress={() => handleTmdbSelect(item)}>
               {uri && <Image source={{ uri }} style={styles.poster} />}
               <View style={{flex: 1, marginLeft: 10}}>
-                  <Text style={styles.searchTitle}>{title} ({year})</Text>
+                  <Text style={styles.searchTitle}>{title} ({year}) {isTv ? '[TV]' : ''}</Text>
                   <Text numberOfLines={2} style={styles.overview}>{item.overview}</Text>
               </View>
-              <Button title="Add" onPress={() => addToLibrary(item)} />
+              <Button title="Select" onPress={() => handleTmdbSelect(item)} />
           </TouchableOpacity>
       )
   };
 
   return (
     <View style={styles.container}>
-        <Text style={styles.headerTitle}>Videos in {title}</Text>
         {loading ? (
             <ActivityIndicator size="large" />
         ) : (
@@ -233,7 +269,43 @@ export default function VideoListScreen({ route, navigation }) {
                         />
                         <Button title="Save & Search" onPress={saveApiKey} />
                     </View>
+                ) : selectedTmdbItem ? (
+                    // TV Show Confirmation View
+                    <View style={styles.selectionContainer}>
+                        <Text style={styles.selectionTitle}>Selected: {selectedTmdbItem.name}</Text>
+                        <Text style={styles.instruction}>Please confirm Season and Episode:</Text>
+
+                        <View style={styles.row}>
+                            <View style={styles.halfInput}>
+                                <Text>Season</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={inputSeason}
+                                    onChangeText={setInputSeason}
+                                    keyboardType="numeric"
+                                    placeholder="e.g. 1"
+                                />
+                            </View>
+                            <View style={styles.halfInput}>
+                                <Text>Episode</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    value={inputEpisode}
+                                    onChangeText={setInputEpisode}
+                                    keyboardType="numeric"
+                                    placeholder="e.g. 1"
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Button title="Back to Results" onPress={() => setSelectedTmdbItem(null)} color="gray" />
+                            <View style={{width: 20}}/>
+                            <Button title="Confirm & Add" onPress={confirmTvShowAdd} />
+                        </View>
+                    </View>
                 ) : (
+                    // Search View
                     <>
                         <View style={styles.searchBox}>
                             <TextInput
@@ -351,5 +423,23 @@ const styles = StyleSheet.create({
   overview: {
       fontSize: 12,
       color: 'gray'
+  },
+  selectionContainer: {
+      padding: 20,
+      alignItems: 'center'
+  },
+  selectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 20
+  },
+  row: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 20
+  },
+  halfInput: {
+      width: 100,
+      marginHorizontal: 10
   }
 });

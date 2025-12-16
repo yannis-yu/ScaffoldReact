@@ -39,6 +39,9 @@ export default function LibraryScreen({ navigation }) {
   };
 
   const renderItem = ({ item }) => {
+    // Check if TV info exists
+    const isTv = item.mediaType === 'tv' || (item.season && item.episode);
+
     return (
       <View style={styles.item}>
           {item.posterPath ? (
@@ -49,7 +52,10 @@ export default function LibraryScreen({ navigation }) {
               </View>
           )}
           <View style={styles.info}>
-              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.title}>
+                  {item.title}
+                  {isTv && item.season && item.episode ? ` - S${item.season}E${item.episode}` : ''}
+              </Text>
               <Text style={styles.filename} numberOfLines={1}>File: {item.videoFilename}</Text>
               <Text style={styles.chat} numberOfLines={1}>Chat ID: {item.chatId}</Text>
               <TouchableOpacity onPress={() => removeFromLibrary(item.id)} style={styles.removeBtn}>

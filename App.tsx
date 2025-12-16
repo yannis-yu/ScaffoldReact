@@ -2,6 +2,7 @@ import 'react-native-gesture-handler';
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +22,25 @@ const AppContext = createContext();
 export const useAppContext = () => useContext(AppContext);
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+        screenOptions={{
+            tabBarStyle: {
+                 height: 60,
+                 paddingBottom: 5,
+                 paddingTop: 5
+            }
+        }}
+    >
+      <Tab.Screen name="Chats" component={ChatListScreen} />
+      <Tab.Screen name="Library" component={LibraryScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
+}
 
 export default function App() {
   const [client, setClient] = useState(null);
@@ -65,12 +85,9 @@ export default function App() {
                   setIsLoggedIn(true);
               } else {
                   console.warn('Session stored but not authorized.');
-                  // Maybe clean up or just let user login
-                  // await AsyncStorage.removeItem('session'); // Optional: force logout
               }
           } catch (connError) {
               console.error('Failed to connect with stored session:', connError);
-              // Do not set isLoggedIn(true)
           }
       }
 
@@ -111,8 +128,12 @@ export default function App() {
 
   const logout = async () => {
       if (client) {
-          await client.disconnect();
-          await client.destroy();
+          try {
+              await client.disconnect();
+              await client.destroy();
+          } catch (e) {
+              console.error(e);
+          }
       }
       setClient(null);
       setSession('');
@@ -151,10 +172,8 @@ export default function App() {
               <Stack.Screen name="Login" component={LoginScreen} />
             ) : (
               <>
-                <Stack.Screen name="ChatList" component={ChatListScreen} options={{ title: 'Chats' }} />
+                <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
                 <Stack.Screen name="VideoList" component={VideoListScreen} options={{ title: 'Videos' }} />
-                <Stack.Screen name="Library" component={LibraryScreen} />
-                <Stack.Screen name="Settings" component={SettingsScreen} />
               </>
             )}
           </Stack.Navigator>

@@ -4,12 +4,13 @@ import Track from './Track';
 
 interface TimelineProps {
   waveformData: number[];
+  onSelectionChange: (selection: { start: number | null; end: number | null }) => void;
 }
 
-const Timeline: React.FC<TimelineProps> = ({ waveformData }) => {
+const Timeline: React.FC<TimelineProps> = ({ waveformData, onSelectionChange }) => {
   return (
-    <ScrollView style={styles.timeline}>
-      <Track waveformData={waveformData} />
+    <ScrollView style={styles.timeline} horizontal>
+      <Track waveformData={waveformData} onSelectionChange={onSelectionChange} />
     </ScrollView>
   );
 };

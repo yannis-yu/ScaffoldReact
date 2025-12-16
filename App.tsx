@@ -12,6 +12,7 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [waveformData, setWaveformData] = useState<number[]>([]);
+  const [selection, setSelection] = useState<{ start: number | null; end: number | null }>({ start: null, end: null });
 
   const handlePlay = async () => {
     if (sound) {
@@ -72,6 +73,20 @@ export default function App() {
     }
   };
 
+  const handleSelectionChange = (newSelection: { start: number | null; end: number | null }) => {
+    setSelection(newSelection);
+  };
+
+  const handleTrim = () => {
+    if (selection.start !== null && selection.end !== null) {
+      const start = Math.min(selection.start, selection.end);
+      const end = Math.max(selection.start, selection.end);
+      const newWaveformData = waveformData.slice(start, end);
+      setWaveformData(newWaveformData);
+      setSelection({ start: null, end: null });
+    }
+  };
+
   useEffect(() => {
     return sound
       ? () => {
@@ -84,7 +99,7 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <Header />
       <View style={styles.mainContent}>
-        <Timeline waveformData={waveformData} />
+        <Timeline waveformData={waveformData} onSelectionChange={handleSelectionChange} />
       </View>
       <Controls
         isPlaying={isPlaying}
@@ -94,6 +109,8 @@ export default function App() {
         onPause={handlePause}
         onRecord={handleRecord}
         onLoadFile={handleLoadFile}
+        onTrim={handleTrim}
+        selectionActive={selection.start !== null && selection.end !== null}
       />
     </SafeAreaView>
   );

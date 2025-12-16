@@ -9,9 +9,21 @@ interface ControlsProps {
   onPause: () => void;
   onRecord: () => void;
   onLoadFile: () => void;
+  onTrim: () => void;
+  selectionActive: boolean;
 }
 
-const Controls: React.FC<ControlsProps> = ({ isPlaying, isPaused, isRecording, onPlay, onPause, onRecord, onLoadFile }) => {
+const Controls: React.FC<ControlsProps> = ({
+  isPlaying,
+  isPaused,
+  isRecording,
+  onPlay,
+  onPause,
+  onRecord,
+  onLoadFile,
+  onTrim,
+  selectionActive,
+}) => {
   return (
     <View style={styles.controls}>
       <TouchableOpacity style={styles.button} onPress={onLoadFile}>
@@ -26,6 +38,9 @@ const Controls: React.FC<ControlsProps> = ({ isPlaying, isPaused, isRecording, o
       <TouchableOpacity style={[styles.button, styles.recordButton, isRecording && styles.activeRecordButton]} onPress={onRecord}>
         <Text style={styles.buttonText}>Record</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={[styles.button, !selectionActive && styles.disabledButton]} onPress={onTrim} disabled={!selectionActive}>
+        <Text style={styles.buttonText}>Trim</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -37,6 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#333',
     padding: 10,
+    flexWrap: 'wrap',
   },
   button: {
     backgroundColor: '#555',
@@ -52,6 +68,9 @@ const styles = StyleSheet.create({
   },
   activeRecordButton: {
     backgroundColor: '#d00',
+  },
+  disabledButton: {
+    backgroundColor: '#444',
   },
   buttonText: {
     color: '#fff',

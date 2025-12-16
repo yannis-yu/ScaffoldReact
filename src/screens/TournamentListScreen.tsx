@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView, SectionList } from 'react-native';
 import { getTournaments } from '../api/openDota';
 import { Tournament } from '../types/dota';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,15 +27,23 @@ const TournamentListScreen = ({ navigation }: Props) => {
     fetchTournaments();
   }, []);
 
-  const renderItem = ({ item }: { item: Tournament }) => (
-    <TouchableOpacity testID={`tournament-item-${item.leagueid}`} onPress={() => {
-      navigation.navigate('TournamentDetails', { tournament: item })
-    }}>
-      <View style={styles.item}>
-        <Text style={styles.title}>{item.name}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const groupAndSortTournaments = () => {
+    const grouped = tournaments.reduce((acc, tournament) => {
+      const { tier } = tournament;
+      if (!acc[tier]) {
+        acc[tier] = [];
+      }
+      acc[tier].push(tournament);
+      return acc;
+    }, {} as { [key: string]: Tournament[] });
+
+    return Object.keys(grouped)
+      .map(tier => ({
+        title: tier,
+        data: grouped[tier].sort((a, b) => b.start_timestamp - a.start_timestamp),
+      }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  };
 
   if (loading) {
     return (
@@ -55,10 +63,22 @@ const TournamentListScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FlatList
-        data={tournaments}
-        renderItem={renderItem}
+      <SectionList
+        sections={groupAndSortTournaments()}
         keyExtractor={item => item.leagueid.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            testID={`tournament-item-${item.leagueid}`}
+            onPress={() => navigation.navigate('TournamentDetails', { tournament: item })}
+          >
+            <View style={styles.item}>
+              <Text style={styles.title}>{item.name}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.header}>{title}</Text>
+        )}
       />
     </SafeAreaView>
   );
@@ -73,6 +93,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    backgroundColor: '#f4f4f4',
+    padding: 10,
+  },
   item: {
     backgroundColor: '#f9c2ff',
     padding: 20,
@@ -80,7 +106,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
   },
 });
 

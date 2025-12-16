@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView, SectionList } from 'react-native';
 import { getTeams } from '../api/openDota';
 import { Team } from '../types/dota';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -27,13 +27,32 @@ const TeamListScreen = ({ navigation }: Props) => {
     fetchTeams();
   }, []);
 
-  const renderItem = ({ item }: { item: Team }) => (
-    <TouchableOpacity testID={`team-item-${item.team_id}`} onPress={() => navigation.navigate('TeamDetails', { teamId: item.team_id })}>
-      <View style={styles.item}>
-        <Text style={styles.title}>{item.name}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const getTier = (rating: number) => {
+    if (rating >= 1400) return 'Elite';
+    if (rating >= 1200) return 'Professional';
+    return 'Semi-Professional';
+  };
+
+  const groupAndSortTeams = () => {
+    const grouped = teams.reduce((acc, team) => {
+      const tier = getTier(team.rating);
+      if (!acc[tier]) {
+        acc[tier] = [];
+      }
+      acc[tier].push(team);
+      return acc;
+    }, {} as { [key: string]: Team[] });
+
+    return Object.keys(grouped)
+      .map(tier => ({
+        title: tier,
+        data: grouped[tier].sort((a, b) => b.rating - a.rating),
+      }))
+      .sort((a, b) => {
+        const order = ['Elite', 'Professional', 'Semi-Professional'];
+        return order.indexOf(a.title) - order.indexOf(b.title);
+      });
+  };
 
   if (loading) {
     return (
@@ -58,10 +77,22 @@ const TeamListScreen = ({ navigation }: Props) => {
           <Text style={styles.buttonText}>View Tournaments</Text>
         </View>
       </TouchableOpacity>
-      <FlatList
-        data={teams}
-        renderItem={renderItem}
+      <SectionList
+        sections={groupAndSortTeams()}
         keyExtractor={item => item.team_id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            testID={`team-item-${item.team_id}`}
+            onPress={() => navigation.navigate('TeamDetails', { teamId: item.team_id })}
+          >
+            <View style={styles.item}>
+              <Text style={styles.title}>{item.name}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.header}>{title}</Text>
+        )}
       />
     </SafeAreaView>
   );
@@ -76,6 +107,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    backgroundColor: '#f4f4f4',
+    padding: 10,
+  },
   item: {
     backgroundColor: '#f9c2ff',
     padding: 20,
@@ -83,7 +120,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
   },
   button: {
     backgroundColor: '#007bff',

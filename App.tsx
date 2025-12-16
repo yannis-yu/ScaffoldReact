@@ -15,6 +15,7 @@ import ChatListScreen from './screens/ChatListScreen';
 import VideoListScreen from './screens/VideoListScreen';
 import LibraryScreen from './screens/LibraryScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import PlayerScreen from './screens/PlayerScreen';
 
 // Context
 const AppContext = createContext();
@@ -174,6 +175,7 @@ export default function App() {
               <>
                 <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
                 <Stack.Screen name="VideoList" component={VideoListScreen} options={{ title: 'Videos' }} />
+                <Stack.Screen name="Player" component={PlayerScreen} options={{ headerShown: false }} />
               </>
             )}
           </Stack.Navigator>

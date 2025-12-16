@@ -20,7 +20,7 @@ export default function VideoListScreen({ route, navigation }) {
   const [searching, setSearching] = useState(false);
 
   // TV Show S/E Selection
-  const [selectedTmdbItem, setSelectedTmdbItem] = useState(null); // The TV show selected
+  const [selectedTmdbItem, setSelectedTmdbItem] = useState(null);
   const [inputSeason, setInputSeason] = useState('');
   const [inputEpisode, setInputEpisode] = useState('');
 
@@ -115,6 +115,7 @@ export default function VideoListScreen({ route, navigation }) {
   };
 
   const onVideoPress = (msg) => {
+      // Split action: this is for matching metadata
       const filename = getFilename(msg);
       const text = msg.message || '';
 
@@ -127,12 +128,11 @@ export default function VideoListScreen({ route, navigation }) {
 
       setSearchQuery(query);
       setSelectedMessage(msg);
-      // Pre-fill S/E just in case user picks a TV show later
       setInputSeason(season || '');
       setInputEpisode(episode || '');
 
       setSearchResults([]);
-      setSelectedTmdbItem(null); // Reset selection
+      setSelectedTmdbItem(null);
       setModalVisible(true);
 
       if (query && query.length > 2) {
@@ -142,12 +142,15 @@ export default function VideoListScreen({ route, navigation }) {
       }
   };
 
+  const onPlayPress = (msg) => {
+      const filename = getFilename(msg);
+      navigation.navigate('Player', { chatId, messageId: msg.id, filename });
+  };
+
   const handleTmdbSelect = (item) => {
       if (item.media_type === 'tv' || item.name) { // TV show
           setSelectedTmdbItem(item);
-          // Don't add yet, let user confirm S/E
       } else {
-          // Movie, add directly
           addToLibrary(item);
       }
   };
@@ -180,9 +183,6 @@ export default function VideoListScreen({ route, navigation }) {
           const existing = await AsyncStorage.getItem('library');
           let library = existing ? JSON.parse(existing) : [];
 
-          // Remove potential duplicate if re-adding logic
-          // library = library.filter(i => i.id !== newItem.id);
-
           if (library.find(i => i.id === newItem.id)) {
               Alert.alert('Info', 'Video updated in library');
               library = library.map(i => i.id === newItem.id ? newItem : i);
@@ -204,10 +204,15 @@ export default function VideoListScreen({ route, navigation }) {
       const text = item.message;
 
       return (
-        <TouchableOpacity style={styles.item} onPress={() => onVideoPress(item)}>
-           <Text style={styles.filename} numberOfLines={1}>{filename}</Text>
-           {text ? <Text style={styles.messageText} numberOfLines={2}>{text}</Text> : null}
-        </TouchableOpacity>
+        <View style={styles.itemContainer}>
+            <TouchableOpacity style={styles.itemContent} onPress={() => onVideoPress(item)}>
+               <Text style={styles.filename} numberOfLines={1}>{filename}</Text>
+               {text ? <Text style={styles.messageText} numberOfLines={2}>{text}</Text> : null}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.playButton} onPress={() => onPlayPress(item)}>
+                <Text style={styles.playButtonText}>Play</Text>
+            </TouchableOpacity>
+        </View>
       );
   };
 
@@ -347,10 +352,26 @@ const styles = StyleSheet.create({
       borderBottomWidth: 1,
       borderBottomColor: '#ccc'
   },
-  item: {
+  itemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+  },
+  itemContent: {
+      flex: 1
+  },
+  playButton: {
+      backgroundColor: '#2196F3',
+      paddingVertical: 8,
+      paddingHorizontal: 15,
+      borderRadius: 5,
+      marginLeft: 10
+  },
+  playButtonText: {
+      color: '#fff',
+      fontWeight: 'bold'
   },
   filename: {
       fontSize: 16,

@@ -38,6 +38,14 @@ export default function LibraryScreen({ navigation }) {
       }
   };
 
+  const playVideo = (item) => {
+      navigation.navigate('Player', {
+          chatId: item.chatId,
+          messageId: item.messageId,
+          filename: item.videoFilename
+      });
+  };
+
   const renderItem = ({ item }) => {
     // Check if TV info exists
     const isTv = item.mediaType === 'tv' || (item.season && item.episode);
@@ -57,10 +65,16 @@ export default function LibraryScreen({ navigation }) {
                   {isTv && item.season && item.episode ? ` - S${item.season}E${item.episode}` : ''}
               </Text>
               <Text style={styles.filename} numberOfLines={1}>File: {item.videoFilename}</Text>
-              <Text style={styles.chat} numberOfLines={1}>Chat ID: {item.chatId}</Text>
-              <TouchableOpacity onPress={() => removeFromLibrary(item.id)} style={styles.removeBtn}>
-                  <Text style={styles.removeText}>Remove</Text>
-              </TouchableOpacity>
+
+              <View style={styles.actions}>
+                  <TouchableOpacity onPress={() => playVideo(item)} style={styles.playBtn}>
+                      <Text style={styles.playText}>Play</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => removeFromLibrary(item.id)} style={styles.removeBtn}>
+                      <Text style={styles.removeText}>Remove</Text>
+                  </TouchableOpacity>
+              </View>
           </View>
       </View>
     );
@@ -110,15 +124,24 @@ const styles = StyleSheet.create({
       fontSize: 12,
       marginBottom: 3
   },
-  chat: {
-      color: 'gray',
+  actions: {
+      flexDirection: 'row',
+      marginTop: 10
+  },
+  playBtn: {
+      backgroundColor: '#2196F3',
+      padding: 6,
+      borderRadius: 5,
+      marginRight: 10
+  },
+  playText: {
+      color: '#fff',
       fontSize: 12,
-      marginBottom: 10
+      fontWeight: 'bold'
   },
   removeBtn: {
       backgroundColor: '#ffdddd',
-      padding: 5,
-      alignSelf: 'flex-start',
+      padding: 6,
       borderRadius: 5
   },
   removeText: {

@@ -21,6 +21,7 @@
     "crypto-browserify": "^3.12.1",
     "events": "^3.3.0",
     "expo": "~54.0.29",
+    "expo-av": "~16.0.8",
     "expo-status-bar": "~3.0.9",
     "fs-web": "^1.0.1",
     "os-browserify": "^0.3.0",

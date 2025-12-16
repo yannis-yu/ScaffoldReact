@@ -13,6 +13,16 @@ export default function App() {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [selection, setSelection] = useState<{ start: number | null; end: number | null }>({ start: null, end: null });
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission not granted', 'Sorry, we need microphone permissions to make this work!');
+      }
+    })();
+  }, []);
 
   const handlePlay = async () => {
     if (sound) {
@@ -39,11 +49,45 @@ export default function App() {
     }
   };
 
+  async function startRecording() {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording', err);
+    }
+  }
+
+  async function stopRecording() {
+    if (!recording) {
+      return;
+    }
+    setIsRecording(false);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    if (uri) {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      const { sound: newSound } = await Audio.Sound.createAsync({ uri });
+      setSound(newSound);
+      generateRandomWaveform();
+    }
+  }
+
   const handleRecord = () => {
-    // This will be implemented in a future step.
-    setIsRecording(true);
-    setIsPlaying(false);
-    setIsPaused(false);
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   };
 
   const generateRandomWaveform = () => {

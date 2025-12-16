@@ -36,7 +36,7 @@ const Controls: React.FC<ControlsProps> = ({
         <Text style={styles.buttonText}>Pause</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.button, styles.recordButton, isRecording && styles.activeRecordButton]} onPress={onRecord}>
-        <Text style={styles.buttonText}>Record</Text>
+        <Text style={styles.buttonText}>{isRecording ? 'Stop' : 'Record'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.button, !selectionActive && styles.disabledButton]} onPress={onTrim} disabled={!selectionActive}>
         <Text style={styles.buttonText}>Trim</Text>

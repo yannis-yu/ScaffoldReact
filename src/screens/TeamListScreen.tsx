@@ -72,11 +72,6 @@ const TeamListScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={() => navigation.navigate('TournamentList')}>
-        <View style={styles.button}>
-          <Text style={styles.buttonText}>View Tournaments</Text>
-        </View>
-      </TouchableOpacity>
       <SectionList
         sections={groupAndSortTeams()}
         keyExtractor={item => item.team_id.toString()}

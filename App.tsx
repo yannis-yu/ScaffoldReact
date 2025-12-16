@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
 
-// Screens (Placeholders for now)
+// Screens
 import LoginScreen from './screens/LoginScreen';
 import ChatListScreen from './screens/ChatListScreen';
 import VideoListScreen from './screens/VideoListScreen';
@@ -32,23 +32,48 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    loadSettings();
+    loadSettingsAndConnect();
   }, []);
 
-  const loadSettings = async () => {
+  const loadSettingsAndConnect = async () => {
     try {
       const storedSession = await AsyncStorage.getItem('session');
       const storedApiId = await AsyncStorage.getItem('apiId');
       const storedApiHash = await AsyncStorage.getItem('apiHash');
       const storedTmdbApiKey = await AsyncStorage.getItem('tmdbApiKey');
 
-      if (storedSession) setSession(storedSession);
       if (storedApiId) setApiId(storedApiId);
       if (storedApiHash) setApiHash(storedApiHash);
       if (storedTmdbApiKey) setTmdbApiKey(storedTmdbApiKey);
+      if (storedSession) setSession(storedSession);
 
-      // If we have credentials, we might be "logged in" conceptually,
-      // but we still need to connect. For now, let's just finish loading.
+      // Attempt to connect if we have necessary credentials
+      if (storedSession && storedApiId && storedApiHash) {
+          console.log('Attempting to restore session...');
+          try {
+              const stringSession = new StringSession(storedSession);
+              const newClient = new TelegramClient(stringSession, parseInt(storedApiId), storedApiHash, {
+                  connectionRetries: 5,
+              });
+
+              await newClient.connect();
+
+              // Verify if authorized
+              if (await newClient.checkAuthorization()) {
+                  console.log('Session restored and authorized.');
+                  setClient(newClient);
+                  setIsLoggedIn(true);
+              } else {
+                  console.warn('Session stored but not authorized.');
+                  // Maybe clean up or just let user login
+                  // await AsyncStorage.removeItem('session'); // Optional: force logout
+              }
+          } catch (connError) {
+              console.error('Failed to connect with stored session:', connError);
+              // Do not set isLoggedIn(true)
+          }
+      }
+
     } catch (e) {
       console.error('Failed to load settings', e);
     } finally {
@@ -85,6 +110,10 @@ export default function App() {
   }
 
   const logout = async () => {
+      if (client) {
+          await client.disconnect();
+          await client.destroy();
+      }
       setClient(null);
       setSession('');
       setIsLoggedIn(false);

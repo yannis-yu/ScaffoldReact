@@ -8,17 +8,17 @@ const audioFiles = [
   require('./assets/audio/sample1.mp3'),
   require('./assets/audio/sample2.mp3'),
   require('./assets/audio/sample3.wav'),
-  require('./assets/audio/sample4.ogg'),
 ];
 
 export default function App() {
-  const [volumes, setVolumes] = useState([0.5, 0.5, 0.5, 0.5]);
+  const [volumes, setVolumes] = useState([0.5, 0.5, 0.5]);
   const [sounds, setSounds] = useState<Audio.Sound[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
+    let soundObjects: Audio.Sound[] = [];
     const loadSounds = async () => {
-      const soundObjects = await Promise.all(
+      soundObjects = await Promise.all(
         audioFiles.map(async (file) => {
           const { sound } = await Audio.Sound.createAsync(file, {
             isLooping: true,
@@ -32,7 +32,7 @@ export default function App() {
     loadSounds();
 
     return () => {
-      sounds.forEach((sound) => sound.unloadAsync());
+      soundObjects.forEach((sound) => sound.unloadAsync());
     };
   }, []);
 

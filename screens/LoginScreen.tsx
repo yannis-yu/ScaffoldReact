@@ -117,8 +117,8 @@ export default function LoginScreen() {
               {
                   apiId: parseInt(inputApiId),
                   apiHash: inputApiHash,
-              },
-              phoneNumber
+                  phoneNumber: phoneNumber,
+              }
           );
 
           setPhoneCodeHash(result.phoneCodeHash);

@@ -51,7 +51,8 @@ export class TelegramFile {
             // We pass this.document instead of this.message.media to be more explicit.
             // GramJS internal helpers usually extract input location from the document.
 
-            const iter = this.client.iterDownload(this.document, {
+            const iter = this.client.iterDownload({
+                file: this.document,
                 offset: offsetBI,
                 limit: limit,
                 chunkSize: 128 * 1024, // 128KB chunks

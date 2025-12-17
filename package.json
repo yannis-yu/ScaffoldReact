@@ -11,6 +11,7 @@
     "commitlint": "commitlint --edit"
   },
   "dependencies": {
+    "@react-navigation/bottom-tabs": "^7.8.12",
     "@react-navigation/native": "^7.1.25",
     "@react-navigation/stack": "^7.6.12",
     "expo": "~54.0.25",
@@ -20,6 +21,7 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "^5.6.2",
     "react-native-screens": "^4.19.0",
+    "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {

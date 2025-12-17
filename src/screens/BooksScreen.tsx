@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import BookCard from '../components/BookCard';
 
-const EncyclopediaScreen = () => {
+const BooksScreen = () => {
   const [books, setBooks] = useState([]);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetch('https://anapioficeandfire.com/api/books')
@@ -13,11 +15,14 @@ const EncyclopediaScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>A Song of Ice and Fire Encyclopedia</Text>
       <FlatList
         data={books}
         keyExtractor={item => item.url}
-        renderItem={({ item }) => <BookCard book={item} />}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('BookDetail', { book: item })}>
+            <BookCard book={item} />
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
@@ -36,4 +41,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EncyclopediaScreen;
+export default BooksScreen;

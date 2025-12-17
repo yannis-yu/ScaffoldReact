@@ -117,16 +117,17 @@ export default function LoginScreen() {
               {
                   apiId: parseInt(inputApiId),
                   apiHash: inputApiHash,
-                  phoneNumber: phoneNumber,
-              }
+              },
+              phoneNumber
           );
 
           setPhoneCodeHash(result.phoneCodeHash);
           setPhoneStep('code');
           setStatus('Code sent. Please check your telegram.');
       } catch (e) {
-          console.error(e);
-          setStatus('Error sending code: ' + e.message);
+          console.error('SendCode Error:', e);
+          const msg = e && e.message ? e.message : JSON.stringify(e);
+          setStatus('Error sending code: ' + msg);
       } finally {
           setLoading(false);
       }

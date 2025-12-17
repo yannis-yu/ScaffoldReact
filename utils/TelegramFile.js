@@ -1,4 +1,9 @@
 import { Readable } from 'readable-stream';
+import { Api } from 'telegram';
+import { BigInt } from 'big-integer'; // GramJS might use a polyfill or native BigInt.
+// However, in modern JS environments supported by React Native Web, native BigInt is available.
+// But GramJS uses 'big-integer' package sometimes.
+// We will try native BigInt first, usually GramJS accepts it or converts it.
 
 export class TelegramFile {
     constructor(client, message) {
@@ -13,6 +18,8 @@ export class TelegramFile {
 
         const attr = doc.attributes.find(a => a.fileName);
         this.name = attr ? attr.fileName : 'video.mp4';
+
+        this.document = doc;
     }
 
     createReadStream(opts = {}) {
@@ -33,19 +40,19 @@ export class TelegramFile {
 
     async _fetchData(stream, offset, limit) {
         try {
-            // gramjs iterDownload
-            // Note: offset must be bigInt or number. gramjs handles it.
-            // chunkSize is optional, default is usually 128kb or dynamic.
-
-            // Note on gramjs: iterDownload returns AsyncIterator of Buffers.
-            // We need to verify if `offset` and `limit` work as expected for ranges.
-            // Actually iterDownload takes { offset, limit, chunkSize, requestSize }.
-            // limit is the Total bytes to download.
-
             // console.log(`Streaming: fetching ${limit} bytes from ${offset}`);
 
-            const iter = this.client.iterDownload(this.message.media, {
-                offset: offset,
+            // Ensure BigInt for offset (GramJS often expects BigInts for file offsets)
+            // If the environment supports BigInt:
+            const offsetBI = typeof BigInt !== 'undefined' ? BigInt(offset) : offset;
+            // Limit is usually a number (count of bytes) but checking docs helps.
+            // iterDownload signature: (file, { limit, offset, chunkSize, requestSize })
+
+            // We pass this.document instead of this.message.media to be more explicit.
+            // GramJS internal helpers usually extract input location from the document.
+
+            const iter = this.client.iterDownload(this.document, {
+                offset: offsetBI,
                 limit: limit,
                 chunkSize: 128 * 1024, // 128KB chunks
             });
@@ -54,7 +61,6 @@ export class TelegramFile {
                 // chunk is a Buffer
                 if (!stream.push(chunk)) {
                     // Backpressure handling if needed, but for now just push
-                    // Readable stream buffer handling does some of this
                 }
             }
 
